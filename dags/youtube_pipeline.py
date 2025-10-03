@@ -11,6 +11,7 @@ dag_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, dag_dir)
 
 from pipelines.youtube.extract import extract_youtube_data
+from pipelines.youtube.load import process_youtube_data
 
 
 with DAG(
@@ -23,3 +24,10 @@ with DAG(
     test_extract = PythonOperator(
         task_id="extract_youtube_data", python_callable=extract_youtube_data
     )
+
+    test_load = PythonOperator(
+        task_id="process_youtube_data", python_callable=process_youtube_data
+    )
+
+    # Set task dependencies
+    test_extract >> test_load
