@@ -12,6 +12,10 @@ import pandas as pd
 import numpy as np
 import os
 import json
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def process_youtube_data():
@@ -80,9 +84,22 @@ def process_youtube_data():
         # Output sample data
         print("Transformed data sample:\n", transformed_df.head())
 
-        # Save processed data
+        # Save processed data back to MinIO
         print(f"Saving processed data to {output_path}")
         transformed_df.to_parquet(output_path, storage_options=storage_options)
+
+        # Load same data into PostgreSQL
+        postgre_conn_string = os.environ.get("POSTGRES_CONN_STRING")
+        if not postgre_conn_string:
+            raise ValueError("POSTGRES_CONN_STRING not found in .env file")
+
+        print("Connecting to PostgreSQL...")
+        engine = create_engine(postgre_conn_string)
+
+        # Load into PostgreSQL table
+        table_name = "Raye_youtube_channel_stats"
+        transformed_df.to_sql(table_name, engine, if_exists="append", index=False)
+        print(f"Successfully loaded {len(transformed_df)} records into PostgreSQL table '{table_name}'")
 
     except Exception as e:
         print(f"Error during transformation: {e}")
