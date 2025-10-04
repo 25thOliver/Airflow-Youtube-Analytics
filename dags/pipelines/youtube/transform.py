@@ -3,14 +3,9 @@ import numpy as np
 import os
 from datetime import datetime, timedelta
 
-# Transform YouTube channel data using Pandas
-# Reads raw data from MinIO
-# Applies transformations and feature engineering
-# Writes processed data back to MinIO
-
 
 def transform_youtube_data():
-    # Storage options for MinIO (using s3fs)
+    # MinIO Storage Configuration
     storage_options = {
         "key": os.environ.get("MINIO_ACCESS_KEY"),
         "secret": os.environ.get("MINIO_SECRET_KEY"),
@@ -24,9 +19,10 @@ def transform_youtube_data():
     raw_path = f"s3://{bucket_name}/raw/channel_stats.json"
     transformed_path = f"s3://{bucket_name}/transformed/channel_stats_transformed.parquet"
 
+    print(f"Reading raw data from {raw_path}")
+
     # Read the raw JSON data
     try:
-        print(f"Reading raw data from {raw_path}")
         raw_df = pd.read_json(raw_path, storage_options=storage_options)
         print(f"Successfully loaded raw data with {len(raw_df)} rows")
         print("DataFrame columns:\n", raw_df.columns)
@@ -41,56 +37,57 @@ def transform_youtube_data():
         # Create a new DataFrame for the transformed data
         transformed_df = pd.DataFrame()
 
-        # Use the 'id' column as 'channel_id' if it serves that purpose
+        # Core identifiers
         transformed_df["channel_id"] = raw_df["id"]
-
-        # Extract and rename columns
         transformed_df["channel_title"] = raw_df["snippet.title"]
         transformed_df["published_at"] = pd.to_datetime(raw_df["snippet.publishedAt"])
+        transformed_df["country"] = raw_df.get("snippet.country", "Unknown")
+
+        # Channel statistics
         transformed_df["view_count"] = raw_df["statistics.viewCount"].astype(int)
         transformed_df["subscriber_count"] = raw_df["statistics.subscriberCount"].astype(int)
         transformed_df["video_count"] = raw_df["statistics.videoCount"].astype(int)
         transformed_df["hidden_subscribers"] = raw_df["statistics.hiddenSubscriberCount"].fillna(0)
 
-        # Convert published_at to date
-        transformed_df["published_date"] = transformed_df["published_at"].dt.date
-
-        # Add day of week (0=Monday, 6=Sunday in pandas)
-        transformed_df["published_day"] = transformed_df["published_at"].dt.dayofweek
-
-        # Calculate engagement metrics
-        transformed_df["subscribers_per_video"] = transformed_df.apply(
-            lambda row: round(row["subscriber_count"] / max(row["video_count"], 1), 2),
-            axis=1,
+        # Engagements metrics
+        transformed_df["like_count"] = (
+            raw_df["statistics.likeCount"].astype(int)
+            if "statistics.likeCount" in raw_df.columns
+            else 0
         )
 
-        transformed_df["views_per_video"] = transformed_df.apply(
-            lambda row: round(row["view_count"] / max(row["video_count"], 1), 2), axis=1
+        transformed_df["comment_count"] = (
+            raw_df["statistics.commentCount"].astype(int)
+            if "statistics.commentCount" in raw_df.columns
+            else 0
         )
 
-        # Add channel age in days
+
+        # Derive insights
+        transformed_df["views_per_video"] = transformed_df["view_count"] / transformed_df["video_count"].replace(0, 1)
+        transformed_df["subs_per_video"] = transformed_df["subscriber_count"] / transformed_df["video_count"].replace(0, 1)
+
+        transformed_df["like_ratio"] = (transformed_df["like_count"] / transformed_df["view_count"].replace(0, 1)).round(4)
+        transformed_df["comment_ratio"] = (transformed_df["comment_count"] / transformed_df["view_count"].replace(0, 1)).round(4)
+        transformed_df["engagement_rate"] = ((transformed_df["like_count"] + transformed_df["comment_count"]) / transformed_df["view_count"].replace(0, 1)).round(4)
+
+        # Time-based metrics 
         today = pd.to_datetime(datetime.now().date())
-        transformed_df["channel_age_days"] = transformed_df["published_date"].apply(
-            lambda date: (today - pd.to_datetime(date)).days
-        )
+        transformed_df["channel_age_days"] = (today - transformed_df["published_at"].dt.date.astype("datetime64[ns]")).dt.days
 
-        # Calculate growth metrics
-        transformed_df["daily_subscriber_growth"] = transformed_df.apply(
-            lambda row: round(
-                row["subscriber_count"] / max(row["channel_age_days"], 1), 2
-            ),
-            axis=1,
-        )   
+        transformed_df["daily_view_growth"] = (transformed_df["view_count"] / transformed_df["channel_age_days"].replace(0, 1)).round(2)
+        transformed_df["daily_sub_growth"] = (transformed_df["subscriber_count"] / transformed_df["channel_age_days"].replace(0, 1)).round(2)
 
-        transformed_df["daily_view_growth"] = transformed_df.apply(
-            lambda row: round(row["view_count"] / max(row["channel_age_days"], 1), 2),
-            axis=1,
-        )
+        # Clean NaN
+        transformed_df = transformed_df.fillna({
+            "country": "Unknown",
+            "like_count": 0,
+            "comment_count": 0,
+        })
 
         # Show sample of transformed data
-        print("Transformed data sample:")
-        print(transformed_df.head())
-
+        print("Transformed data sample:\n", transformed_df.head())
+    
         # Write transformed data
         print(f"Writing transformed data to {transformed_path}")
         transformed_df.to_parquet(transformed_path, storage_options=storage_options)
