@@ -67,12 +67,9 @@ def process_youtube_data():
         transformed_df["video_count"] = df["video_count"].astype(int)
         
         # Engagements additions from transform.py
-        transformed_df["like_count"] = (
-            df["like_count"].astype(int) if "like_count" in df.columns else 0
-        )
-        transformed_df["comment_count"] = (
-            df["comment_count"].astype(int) if "comment_count" in df.columns else 0
-        )
+        transformed_df["like_count"] = df.get("like_count", pd.Series([0]*len(df))).astype(int)
+        transformed_df["comment_count"] = df.get("comment_count", pd.Series([0]*len(df))).astype(int)
+
         transformed_df["engagement_rate"] = (
             df["engagement_rate"].astype(float) if "engagement_rate" in df.columns else 0.0
         )
