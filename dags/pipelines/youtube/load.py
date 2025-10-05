@@ -107,7 +107,7 @@ def process_youtube_data():
 
         # Load into PostgreSQL table
         table_name = "Raye_youtube_channel_stats"
-        transformed_df.to_sql(table_name, engine, if_exists="append", index=False)
+        transformed_df.to_sql(table_name, engine, if_exists="replace", index=False)
         print(f"Successfully loaded {len(transformed_df)} records into PostgreSQL table '{table_name}'")
 
     except Exception as e:

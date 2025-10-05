@@ -49,18 +49,19 @@ def transform_youtube_data():
         transformed_df["video_count"] = raw_df["statistics.videoCount"].astype(int)
         transformed_df["hidden_subscribers"] = raw_df["statistics.hiddenSubscriberCount"].fillna(0)
 
-        # Engagements metrics
-        transformed_df["like_count"] = (
-            raw_df["statistics.likeCount"].astype(int)
-            if "statistics.likeCount" in raw_df.columns
-            else 0
-        )
+        # Engagement metrics
+        if "statistics.likeCount" in raw_df.columns:
+            raw_df.rename(columns={"statistics.likeCount": "like_count"}, inplace=True)
+        else:
+            raw_df["like_count"] = 0
 
-        transformed_df["comment_count"] = (
-            raw_df["statistics.commentCount"].astype(int)
-            if "statistics.commentCount" in raw_df.columns
-            else 0
-        )
+        if "statistics.commentCount" in raw_df.columns:
+            raw_df.rename(columns={"statistics.commentCount": "comment_count"}, inplace=True)
+        else:
+            raw_df["comment_count"] = 0
+
+        output_path = f"s3://{bucket_name}/transformed/channel_stats_transformed.parquet"
+        transformed_df.to_parquet(output_path, storage_options=storage_options)
 
 
         # Derive insights
