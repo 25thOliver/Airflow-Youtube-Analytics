@@ -6,9 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def process_youtube_data():
-    # -----------------------------
     # 🔧 MinIO Configuration
-    # -----------------------------
     storage_options = {
         "key": os.environ.get("MINIO_ACCESS_KEY"),
         "secret": os.environ.get("MINIO_SECRET_KEY"),
@@ -23,20 +21,16 @@ def process_youtube_data():
 
     print(f"Reading transformed data from {input_path}...")
 
-    # -----------------------------
-    # 🧠 Load Transformed Data
-    # -----------------------------
+    # Load Transformed Data
     try:
         df = pd.read_parquet(input_path, storage_options=storage_options)
-        print(f"✅ Loaded transformed data with {len(df)} rows and {len(df.columns)} columns")
+        print(f"Loaded transformed data with {len(df)} rows and {len(df.columns)} columns")
         print("Columns:", df.columns.tolist())
     except Exception as e:
-        print(f"❌ Error reading transformed data: {e}")
+        print(f"Error reading transformed data: {e}")
         raise
 
-    # -----------------------------
-    # 🧹 Data Cleaning & Schema Alignment
-    # -----------------------------
+    # Data Cleaning & Schema Alignment
     print("Cleaning and aligning schema...")
 
     try:
@@ -73,23 +67,19 @@ def process_youtube_data():
             "engagement_rate": 0.0
         })
 
-        print("✅ Schema aligned and cleaned successfully")
+        print("Schema aligned and cleaned successfully")
         print(processed_df.head())
 
     except Exception as e:
-        print(f"❌ Error during transformation: {e}")
+        print(f"Error during transformation: {e}")
         raise
 
-    # -----------------------------
-    # 💾 Save Processed Data Back to MinIO
-    # -----------------------------
+    # Save Processed Data Back to MinIO
     print(f"Saving processed data to {output_path}")
     processed_df.to_parquet(output_path, storage_options=storage_options)
-    print(f"✅ Saved processed data to {output_path}")
+    print(f"Saved processed data to {output_path}")
 
-    # -----------------------------
-    # 🗄️ Load Data into PostgreSQL
-    # -----------------------------
+    # Load Data into PostgreSQL
     postgre_conn_string = os.environ.get("POSTGRES_CONN_STRING")
     if not postgre_conn_string:
         raise ValueError("POSTGRES_CONN_STRING not found in environment variables")
@@ -100,10 +90,10 @@ def process_youtube_data():
         table_name = "raye_youtube_channel_stats"
 
         processed_df.to_sql(table_name, engine, if_exists="replace", index=False)
-        print(f"✅ Successfully loaded {len(processed_df)} record(s) into PostgreSQL table '{table_name}'")
+        print(f"Successfully loaded {len(processed_df)} record(s) into PostgreSQL table '{table_name}'")
 
     except Exception as e:
-        print(f"❌ Error loading data to PostgreSQL: {e}")
+        print(f"Error loading data to PostgreSQL: {e}")
         raise
 
 

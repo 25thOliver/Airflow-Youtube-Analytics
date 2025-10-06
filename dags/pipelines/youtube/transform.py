@@ -21,15 +21,13 @@ def transform_youtube_data():
 
     print(f"Reading channel data from {channel_path}")
     channel_df = pd.read_json(channel_path, storage_options=storage_options)
-    print(f"✅ Loaded channel data with {len(channel_df)} rows")
+    print(f"Loaded channel data with {len(channel_df)} rows")
 
     print(f"Reading video data from {videos_path}")
     videos_df = pd.read_json(videos_path, storage_options=storage_options)
-    print(f"✅ Loaded video data with {len(videos_df)} rows")
+    print(f"Loaded video data with {len(videos_df)} rows")
 
-    # -----------------------------------------------
     # 🔹 Aggregate video-level engagement metrics
-    # -----------------------------------------------
     print("Aggregating video-level engagement metrics...")
 
     # Clean and convert numeric fields safely
@@ -44,11 +42,9 @@ def transform_youtube_data():
     avg_likes = videos_df["statistics.likeCount"].mean()
     avg_comments = videos_df["statistics.commentCount"].mean()
 
-    print(f"📊 Aggregated totals: Views={total_views}, Likes={total_likes}, Comments={total_comments}")
+    print(f"Aggregated totals: Views={total_views}, Likes={total_likes}, Comments={total_comments}")
 
-    # -----------------------------------------------
     # 🔹 Transform channel-level data
-    # -----------------------------------------------
     transformed_df = pd.DataFrame()
     transformed_df["channel_id"] = channel_df["id"]
     transformed_df["channel_title"] = channel_df["snippet.title"]
@@ -60,9 +56,7 @@ def transform_youtube_data():
     transformed_df["video_count"] = channel_df["statistics.videoCount"].astype(int)
     transformed_df["hidden_subscribers"] = channel_df["statistics.hiddenSubscriberCount"].fillna(0)
 
-    # -----------------------------------------------
     # 🔹 Add engagement metrics
-    # -----------------------------------------------
     transformed_df["like_count"] = total_likes
     transformed_df["comment_count"] = total_comments
     transformed_df["views_per_video"] = total_views / transformed_df["video_count"].replace(0, 1)
@@ -72,9 +66,7 @@ def transform_youtube_data():
     transformed_df["comment_ratio"] = round(total_comments / total_views, 4) if total_views else 0
     transformed_df["engagement_rate"] = round((total_likes + total_comments) / total_views, 4) if total_views else 0
 
-    # -----------------------------------------------
-    # 🔹 Time-based metrics
-    # -----------------------------------------------
+    # Time-based metrics
     today = pd.to_datetime(datetime.now().date())
     transformed_df["channel_age_days"] = (
         today - transformed_df["published_at"].dt.date.astype("datetime64[ns]")
@@ -87,14 +79,12 @@ def transform_youtube_data():
         transformed_df["subscriber_count"] / transformed_df["channel_age_days"].replace(0, 1)
     ).round(2)
 
-    # -----------------------------------------------
-    # 🔹 Save transformed data
-    # -----------------------------------------------
+    # Save transformed data
     print("Saving transformed dataset to MinIO...")
     transformed_df.to_parquet(transformed_path, storage_options=storage_options)
-    print(f"✅ Saved transformed data to {transformed_path}")
+    print(f"Saved transformed data to {transformed_path}")
 
-    print("\n✅ Transformation complete. Summary:")
+    print("\nTransformation complete. Summary:")
     print(transformed_df[["channel_title", "view_count", "like_count", "comment_count", "engagement_rate"]])
 
     return "YouTube data transformation completed successfully!"
