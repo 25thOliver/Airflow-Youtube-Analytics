@@ -30,11 +30,11 @@ def fetch_channel_data():
         raise ValueError("No data returned from YouTube API for channel")
 
     channel_df = pd.json_normalize(data["items"][0])
-    print(f"✅ Retrieved channel data with {len(channel_df.columns)} columns")
+    print(f"Retrieved channel data with {len(channel_df.columns)} columns")
 
     s3_uri = f"s3://{BUCKET_NAME}/raw/channel_stats.json"
     channel_df.to_json(s3_uri, orient="records", lines=False, storage_options=storage_options)
-    print(f"📤 Saved channel data to {s3_uri}")
+    print(f"Saved channel data to {s3_uri}")
 
     return channel_df
 
@@ -65,7 +65,7 @@ def fetch_video_ids(channel_id, max_results=50):
         if not page_token:
             break
 
-    print(f"✅ Retrieved {len(video_ids)} video IDs")
+    print(f"Retrieved {len(video_ids)} video IDs")
     return video_ids
 
 
@@ -85,11 +85,11 @@ def fetch_video_stats(video_ids):
         raise ValueError("No video data returned from API")
 
     videos_df = pd.json_normalize(all_videos)
-    print(f"✅ Retrieved stats for {len(videos_df)} videos")
+    print(f"Retrieved stats for {len(videos_df)} videos")
 
     s3_uri = f"s3://{BUCKET_NAME}/raw/video_stats.json"
     videos_df.to_json(s3_uri, orient="records", lines=False, storage_options=storage_options)
-    print(f"📤 Saved video data to {s3_uri}")
+    print(f"Saved video data to {s3_uri}")
 
     return videos_df
 
@@ -101,12 +101,12 @@ def extract_youtube_data():
         video_ids = fetch_video_ids(CHANNEL_ID)
         videos_df = fetch_video_stats(video_ids)
 
-        print("\n📊 Extraction Summary:")
+        print("\nExtraction Summary:")
         print(f"- Channel: {channel_df['snippet.title'][0]}")
         print(f"- Total videos fetched: {len(videos_df)}")
 
     except Exception as e:
-        print(f"❌ Extraction failed: {e}")
+        print(f"Extraction failed: {e}")
         raise
 
 
