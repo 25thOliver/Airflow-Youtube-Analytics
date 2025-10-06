@@ -5,8 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def process_youtube_data():
-    # 🔧 MinIO Configuration
+    # MinIO Configuration
     storage_options = {
         "key": os.environ.get("MINIO_ACCESS_KEY"),
         "secret": os.environ.get("MINIO_SECRET_KEY"),
@@ -37,8 +38,13 @@ def process_youtube_data():
         processed_df = pd.DataFrame()
         processed_df["channel_id"] = df["channel_id"]
         processed_df["channel_name"] = df["channel_title"]
-        processed_df["published_at"] = pd.to_datetime(df["published_at"])
-        processed_df["country"] = df.get("country", "Unknown")
+        processed_df["published_at"] = pd.to_datetime(df["published_at"], errors="coerce")
+
+        # Handle categorical country values safely
+        if "country" in df.columns:
+            if pd.api.types.is_categorical_dtype(df["country"]):
+                df["country"] = df["country"].astype(str)
+        processed_df["country"] = df.get("country", "Unknown").fillna("Unknown")
 
         # Core channel metrics
         processed_df["view_count"] = df["view_count"].astype(int)
@@ -46,8 +52,8 @@ def process_youtube_data():
         processed_df["video_count"] = df["video_count"].astype(int)
 
         # Engagement metrics
-        processed_df["like_count"] = df["like_count"].astype(int)
-        processed_df["comment_count"] = df["comment_count"].astype(int)
+        processed_df["like_count"] = df["like_count"].fillna(0).astype(int)
+        processed_df["comment_count"] = df["comment_count"].fillna(0).astype(int)
         processed_df["like_ratio"] = df["like_ratio"].astype(float)
         processed_df["comment_ratio"] = df["comment_ratio"].astype(float)
         processed_df["engagement_rate"] = df["engagement_rate"].astype(float)
@@ -58,14 +64,6 @@ def process_youtube_data():
         processed_df["channel_age_days"] = df["channel_age_days"].astype(int)
         processed_df["daily_view_growth"] = df["daily_view_growth"].astype(float)
         processed_df["daily_sub_growth"] = df["daily_sub_growth"].astype(float)
-
-        # Fill nulls with defaults
-        processed_df = processed_df.fillna({
-            "country": "Unknown",
-            "like_count": 0,
-            "comment_count": 0,
-            "engagement_rate": 0.0
-        })
 
         print("Schema aligned and cleaned successfully")
         print(processed_df.head())

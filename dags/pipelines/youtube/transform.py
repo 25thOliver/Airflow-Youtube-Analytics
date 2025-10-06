@@ -5,12 +5,12 @@ from pyspark.sql import functions as F
 
 
 def transform_youtube_data():
-    # 🔹 MinIO / S3 Configuration
+    # MinIO / S3 Configuration
     minio_endpoint = "http://172.17.0.1:9000"  # internal Docker host address for MinIO
     access_key = os.environ.get("MINIO_ACCESS_KEY", "minioadmin")
     secret_key = os.environ.get("MINIO_SECRET_KEY", "minioadmin")
 
-    # 🔹 Initialize SparkSession with Hadoop S3A support
+    # Initialize SparkSession with Hadoop S3A support
     spark = (
         SparkSession.builder
         .appName("YouTube Data Transformation")
@@ -39,7 +39,7 @@ def transform_youtube_data():
     videos_df = spark.read.json(videos_path)
     print(f"Loaded video data with {videos_df.count()} rows")
 
-    # 🔹 Aggregate video-level engagement metrics
+    # Aggregate video-level engagement metrics
     print("Aggregating video-level engagement metrics...")
 
     # Clean and cast numeric fields safely
@@ -118,7 +118,7 @@ def transform_youtube_data():
 
     print("Saving transformed dataset to MinIO...")
     transformed_df.write.mode("overwrite").partitionBy("country").parquet(transformed_path)
-    print(f"✅ Saved transformed data to {transformed_path}")
+    print(f"Saved transformed data to {transformed_path}")
 
     print("\nTransformation complete. Summary:")
     transformed_df.select("channel_title", "view_count", "like_count", "comment_count", "engagement_rate").show()
