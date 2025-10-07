@@ -1,13 +1,14 @@
 # Building an Automated YouTube Analytics Dashboard with Airflow, PySpark, MinIO, PostgreSQL & Grafana
 
 **Author:** *Oliver Samuel*
+
 **Date:** *October 2025*
 
 ---
 
 ## Introduction
 
-This project explores the digital footprint of Raye, the UK chart-topping artist known for her soulful pop sound and breakout hits like Escapism. Using a custom-built **YouTube Analytics Pipeline** powered by **Apache Airflow**, **PySpark**, **MinIO**, **PostgreSQL** and **Grafana**, we analyzed Raye’s channel performance — from engagement trends to audience distribution.
+This project explores the digital footprint of **Raye**, the UK chart-topping artist known for her soulful pop sound and breakout hits like Escapism. Using a custom-built **YouTube Analytics Pipeline** powered by **Apache Airflow**, **PySpark**, **MinIO**, **PostgreSQL** and **Grafana**, we analyzed Raye’s channel performance — from engagement trends to audience distribution.
 
 The goal was to design a scalable data workflow capable of extracting, transforming, and visualizing YouTube channel insights in real time. Beyond technical architecture, this analysis reveals how content release patterns, audience geography, and engagement rates evolve alongside Raye’s career milestones.
 
@@ -173,6 +174,8 @@ cd ~/airflow-docker
 docker compose down
 docker compose up -d
 ```
+![Running Docker Containers](images/docker_containers.png)
+*Running Docker Containers*
 
 To manually test a DAG task inside Airflow:
 
@@ -284,9 +287,15 @@ Each Airflow DAG run performs the full cycle:
 
 ## Conclusion
 
-This project shows how open-source data tools can build a **modern analytics stack** that’s automated, modular, and production-ready — no external cloud costs required.
+This project went beyond dashboards and data pipelines — it told a story about how an artist’s digital rhythm mirrors their creative journey. By building a robust analytics workflow for Raye’s YouTube channel, we connected raw engagement metrics to real-world momentum — from viral singles to album releases.
+
+The pipeline’s architecture, powered by **Apache Airflow**, **PySpark**, **MinIO**, **PostgreSQL**, and **Grafana**, proved not just scalable but insightful — offering a live pulse on fan interactions, audience geography, and engagement surges tied to content drops.
+
+As a next step, the same framework can be extended to analyze cross-platform trends (Spotify, Instagram, TikTok) and measure how each channel amplifies an artist’s reach in the streaming era.
 
 ![Dashboard shot](images/final_shot.png)
 *Final dashboard hero shot.*
+
+*Data meets artistry — and every like, view, and comment becomes a note in the bigger symphony of audience connection.*
 
 ---
