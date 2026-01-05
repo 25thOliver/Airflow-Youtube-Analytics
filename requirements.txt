@@ -1,7 +1,7 @@
 # Core dependencies for YouTube Analytics Pipeline
+# Note: sqlalchemy is managed by Airflow, don't override it
 pandas==2.1.4
 requests==2.31.0
-sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 python-dotenv==1.0.0
 s3fs==2023.12.2
