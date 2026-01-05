@@ -7,11 +7,12 @@ import pandas as pd
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 
 # Storage options for MinIO
+minio_endpoint = os.environ.get("MINIO_ENDPOINT", "http://minio:9000")
 storage_options = {
     "key": os.environ.get("MINIO_ACCESS_KEY"),
     "secret": os.environ.get("MINIO_SECRET_KEY"),
     "client_kwargs": {
-        "endpoint_url": "http://172.17.0.1:9000",
+        "endpoint_url": minio_endpoint,
     },
 }
 
