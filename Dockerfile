@@ -47,3 +47,10 @@ ENV PYSPARK_DRIVER_PYTHON=/usr/local/bin/python
 RUN pip install s3fs
 
 RUN pip install pymongo
+
+# Copy user creation script (switch to root to set permissions)
+USER root
+COPY create_airflow_user.py /opt/airflow/create_airflow_user.py
+RUN chmod +x /opt/airflow/create_airflow_user.py && \
+    chown airflow: /opt/airflow/create_airflow_user.py
+USER airflow
