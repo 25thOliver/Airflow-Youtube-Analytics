@@ -157,41 +157,157 @@ Note: `channel_title` in Spark maps to `channel_name` in PostgreSQL — the only
 
 ---
 
-## Step 4: Airflow Integration and Reusability
+## Step 4: Standalone Docker Setup
 
-This pipeline is designed as a **modular Airflow project** that plugs into a reusable local engine (`~/airflow-docker`).
+This project is now **fully independent** and self-contained. All services (Airflow, MinIO, PostgreSQL, and Grafana) are orchestrated via Docker Compose.
 
-### Run Instructions
+### Prerequisites
 
+- Docker and Docker Compose installed
+- YouTube Data API v3 key ([Get one here](https://developers.google.com/youtube/v3/getting-started))
+
+### Quick Start
+
+**Option 1: Using the startup script (recommended):**
 ```bash
-# Copy and configure environment variables
-cp .env
-chmod +x sync_env.sh
-./sync_env.sh
-
-# Start the Airflow engine
-cd ~/airflow-docker
-docker compose down
-docker compose up -d
+cd airflow-youtube-analytics
+chmod +x start.sh
+./start.sh
 ```
-![Running Docker Containers](images/docker_containers.png)
-*Running Docker Containers*
 
-To manually test a DAG task inside Airflow:
+**Option 2: Manual setup:**
+1. **Clone and navigate to the project directory:**
+   ```bash
+   cd airflow-youtube-analytics
+   ```
+
+2. **Create `.env` file with required variables:**
+   ```bash
+   # Create .env file (it's gitignored, so create it manually)
+   cat > .env << EOF
+   # Required
+   YOUTUBE_API_KEY=your_youtube_api_key_here
+   
+   # Airflow Configuration
+   AIRFLOW_UID=$(id -u)
+   AIRFLOW_PROJ_DIR=$(pwd)
+   _AIRFLOW_WWW_USER_USERNAME=airflow
+   _AIRFLOW_WWW_USER_PASSWORD=airflow
+   
+   # MinIO Configuration
+   MINIO_ENDPOINT=http://minio:9000
+   MINIO_ACCESS_KEY=minioadmin
+   MINIO_SECRET_KEY=minioadmin
+   
+   # PostgreSQL Configuration
+   POSTGRES_CONN_STRING=postgresql://postgres:postgres@postgres-analytics:5432/youtube_analytics
+   
+   # Grafana Configuration
+   GRAFANA_ADMIN_USER=admin
+   GRAFANA_ADMIN_PASSWORD=admin
+   EOF
+   ```
+   
+   Or manually create `.env` and add the variables. See the "Environment Variables" section below for details.
+
+3. **Start all services:**
+   ```bash
+   docker compose up -d
+   ```
+
+5. **Wait for services to initialize** (about 1-2 minutes), then access:
+   - **Airflow Web UI**: http://localhost:8080 (username: `airflow`, password: `airflow`)
+   - **Grafana**: http://localhost:3000 (username: `admin`, password: `admin`)
+   - **MinIO Console**: http://localhost:9001 (username: `minioadmin`, password: `minioadmin`)
+
+### Service Details
+
+| Service         | Port | Description                          |
+| --------------- | ---- | ------------------------------------ |
+| Airflow Web UI  | 8080 | DAG orchestration and monitoring     |
+| Grafana         | 3000 | Data visualization dashboard          |
+| MinIO API       | 9000 | S3-compatible object storage         |
+| MinIO Console   | 9001 | MinIO web interface                  |
+| PostgreSQL      | 5434 | Airflow metadata database (host port) |
+| PostgreSQL      | 5433 | YouTube analytics database (host port) |
+
+**Note:** The PostgreSQL services use different host ports (5434 and 5433) to avoid conflicts with local PostgreSQL installations. Inside Docker, they both use port 5432.
+
+### Testing the Pipeline
+
+To manually test a DAG task:
 
 ```bash
-docker exec -it airflow-docker-airflow-scheduler-1 \
+docker exec -it airflow-youtube-analytics-airflow-scheduler-1 \
   python /opt/airflow/dags/pipelines/youtube/extract.py
 ```
 
 ### Environment Variables
 
-| Variable           | Description                                        |
-| ------------------ | -------------------------------------------------- |
-| `YOUTUBE_API_KEY`  | YouTube Data API v3 key                            |
-| `MINIO_ACCESS_KEY` | MinIO access key                                   |
-| `MINIO_SECRET_KEY` | MinIO secret key                                   |
-| `MINIO_ENDPOINT`   | MinIO endpoint (default: `http://172.17.0.1:9000`) |
+Create a `.env` file in the project root with the following variables:
+
+| Variable              | Description                                        | Required | Default                    |
+| --------------------- | -------------------------------------------------- | -------- | -------------------------- |
+| `YOUTUBE_API_KEY`     | YouTube Data API v3 key                            | ✅ Yes   | -                          |
+| `AIRFLOW_UID`         | User ID for Airflow (Linux/Mac: run `id -u`)       | No       | `50000`                    |
+| `AIRFLOW_PROJ_DIR`    | Project directory path                              | No       | Current directory          |
+| `_AIRFLOW_WWW_USER_USERNAME` | Airflow web UI username                        | No       | `airflow`                  |
+| `_AIRFLOW_WWW_USER_PASSWORD` | Airflow web UI password                        | No       | `airflow`                  |
+| `MINIO_ENDPOINT`      | MinIO endpoint (use `minio:9000` for Docker)        | No       | `http://minio:9000`        |
+| `MINIO_ACCESS_KEY`    | MinIO access key                                   | No       | `minioadmin`               |
+| `MINIO_SECRET_KEY`    | MinIO secret key                                   | No       | `minioadmin`               |
+| `POSTGRES_CONN_STRING`| PostgreSQL connection string for analytics        | No       | Auto-configured            |
+| `GRAFANA_ADMIN_USER`  | Grafana admin username                             | No       | `admin`                    |
+| `GRAFANA_ADMIN_PASSWORD` | Grafana admin password                          | No       | `admin`                    |
+
+**Note:** The `.env` file is gitignored, so you'll need to create it manually. Only `YOUTUBE_API_KEY` is required; all other variables have sensible defaults.
+
+### Managing Services
+
+**Stop all services:**
+```bash
+docker compose down
+```
+
+**Stop and remove volumes (⚠️ deletes all data):**
+```bash
+docker compose down -v
+```
+
+**View logs:**
+```bash
+# All services
+docker compose logs -f
+
+# Specific service
+docker compose logs -f airflow-scheduler
+docker compose logs -f postgres-analytics
+```
+
+**Restart a specific service:**
+```bash
+docker compose restart airflow-scheduler
+```
+
+### Troubleshooting
+
+**Issue: Airflow DAGs not appearing**
+- Wait 1-2 minutes for Airflow to initialize
+- Check logs: `docker compose logs airflow-scheduler`
+- Ensure DAGs are in the `dags/` directory
+
+**Issue: MinIO connection errors**
+- Verify MinIO is running: `docker compose ps minio`
+- Check MinIO logs: `docker compose logs minio`
+- Ensure `MINIO_ENDPOINT` uses service name `minio:9000` (not localhost)
+
+**Issue: PostgreSQL connection errors**
+- Wait for database to be healthy: `docker compose ps postgres-analytics`
+- Check connection string uses `postgres-analytics:5432` (service name)
+
+**Issue: PySpark errors**
+- Verify Java is installed in Airflow container: `docker exec airflow-scheduler java -version`
+- Check Spark logs in Airflow scheduler logs
 
 ![Airflow DAG graph showing extract → transform → load tasks](images/DAG_graph.png)
 *Airflow DAG graph showing extract → transform → load tasks.*
@@ -247,7 +363,7 @@ ORDER BY time DESC, total_views DESC;
 * **View Concentration:** Most traffic originates from English-speaking regions.
 * **Content Rhythm:** Publishing trends show periodic releases tied to album cycles.
 
-![More one engagements](images/panels_2.png)
+![More on engagements](images/panels_2.png)
 *Chart highlighting peak engagement days.*
 
 ---
