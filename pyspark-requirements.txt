@@ -1,0 +1,3 @@
+# PySpark and related dependencies
+pyspark==3.5.0
+
