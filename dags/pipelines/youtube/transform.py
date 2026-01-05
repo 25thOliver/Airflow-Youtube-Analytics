@@ -6,11 +6,12 @@ from pyspark.sql import functions as F
 
 def transform_youtube_data():
     # MinIO / S3 Configuration
-    minio_endpoint = "http://172.17.0.1:9000"  # internal Docker host address for MinIO
+    minio_endpoint = os.environ.get("MINIO_ENDPOINT", "http://minio:9000")
     access_key = os.environ.get("MINIO_ACCESS_KEY", "minioadmin")
     secret_key = os.environ.get("MINIO_SECRET_KEY", "minioadmin")
 
     # Initialize SparkSession with Hadoop S3A support
+    # Using manually installed JARs from /opt/spark/jars
     spark = (
         SparkSession.builder
         .appName("YouTube Data Transformation")
@@ -20,7 +21,7 @@ def transform_youtube_data():
         .config("spark.hadoop.fs.s3a.path.style.access", "true")
         .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         .config("spark.hadoop.fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-        .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.3.2")
+        .config("spark.jars", "/opt/spark/jars/hadoop-aws-3.3.6.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar")
         .getOrCreate()
     )
 
