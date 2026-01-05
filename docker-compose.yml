@@ -20,6 +20,10 @@ x-airflow-common:
     MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
     MINIO_ENDPOINT: http://minio:9000
     POSTGRES_CONN_STRING: postgresql://postgres:postgres@postgres-analytics:5432/youtube_analytics
+    # PySpark configuration
+    SPARK_HOME: /usr/local/lib/python3.12/site-packages/pyspark
+    PYSPARK_PYTHON: /usr/local/bin/python
+    PYSPARK_DRIVER_PYTHON: /usr/local/bin/python
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
