@@ -8,11 +8,12 @@ load_dotenv()
 
 def process_youtube_data():
     # MinIO Configuration
+    minio_endpoint = os.environ.get("MINIO_ENDPOINT", "http://minio:9000")
     storage_options = {
         "key": os.environ.get("MINIO_ACCESS_KEY"),
         "secret": os.environ.get("MINIO_SECRET_KEY"),
         "client_kwargs": {
-            "endpoint_url": "http://172.17.0.1:9000",
+            "endpoint_url": minio_endpoint,
         },
     }
 
@@ -78,7 +79,7 @@ def process_youtube_data():
     print(f"Saved processed data to {output_path}")
 
     # Load Data into PostgreSQL
-    postgre_conn_string = os.environ.get("POSTGRES_CONN_STRING")
+    postgre_conn_string = os.environ.get("POSTGRES_CONN_STRING", "postgresql://postgres:postgres@postgres-analytics:5432/youtube_analytics")
     if not postgre_conn_string:
         raise ValueError("POSTGRES_CONN_STRING not found in environment variables")
 
