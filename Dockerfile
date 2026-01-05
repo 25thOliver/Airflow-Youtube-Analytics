@@ -31,9 +31,13 @@ USER airflow
 COPY requirements.txt .
 COPY pyspark-requirements.txt .
 
-# Install requirements separately
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r pyspark-requirements.txt
+# Pin SQLAlchemy to version compatible with Airflow 3.0.6 (must be < 2.0)
+# Airflow 3.0.6 doesn't support SQLAlchemy 2.x
+RUN pip install --no-cache-dir "sqlalchemy<2.0.0"
+
+# Install requirements separately with higher timeout/retries (pyspark is large)
+RUN PIP_DEFAULT_TIMEOUT=120 PIP_RETRIES=15 pip install --no-cache-dir -r requirements.txt && \
+    PIP_DEFAULT_TIMEOUT=120 PIP_RETRIES=15 pip install --no-cache-dir -r pyspark-requirements.txt
 
 # Set environment variables for PySpark
 ENV PYSPARK_PYTHON=/usr/local/bin/python
