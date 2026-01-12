@@ -7,25 +7,40 @@ x-airflow-common:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__FERNET_KEY: '8T6rkhsYwv5b6TdhZZZPC9BdPSvqpT3SB2QPTqss0GA='
+    AIRFLOW__WEBSERVER__SECRET_KEY: 'your-long-random-secret-key'
+
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__STORE_SERIALIZED_DAGS: 'true'
+    AIRFLOW__CORE__STORE_DAG_CODE: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session'
+
+    AIRFLOW__WEBSERVER__BASE_URL: http://airflow-webserver:8080
+    AIRFLOW__WEBSERVER__WEB_SERVER_URL: http://airflow-webserver:8080
+
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
-    # Environment variables for the pipeline
+
+    # Pipeline variables loaded from .env
     YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-    MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-    MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-    MINIO_ENDPOINT: http://minio:9000
-    POSTGRES_CONN_STRING: postgresql://postgres:postgres@postgres-analytics:5432/youtube_analytics
-    # PySpark configuration
-    SPARK_HOME: /home/airflow/.local/lib/python3.12/site-packages/pyspark
+    MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+    MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+    POSTGRES_CONN_STRING: ${POSTGRES_CONN_STRING}
+    COLLECTAPI_TOKEN: ${COLLECTAPI_TOKEN}
+
+    # Correct Spark path
+    SPARK_HOME: /usr/local/lib/python3.12/site-packages/pyspark
     PYSPARK_PYTHON: /usr/local/bin/python
     PYSPARK_DRIVER_PYTHON: /usr/local/bin/python
+
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
+
   user: "${AIRFLOW_UID:-50000}:0"
+
   depends_on:
     &airflow-common-depends-on
     postgres:
@@ -40,7 +55,6 @@ services:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
-      # Additional database for YouTube analytics
       POSTGRES_MULTIPLE_DATABASES: youtube_analytics
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
@@ -52,9 +66,8 @@ services:
       timeout: 5s
     restart: always
     ports:
-      - "5434:5432"  # Changed from 5432 to avoid conflict with local PostgreSQL
+      - "5434:5432"
 
-  # PostgreSQL for YouTube Analytics (separate instance)
   postgres-analytics:
     image: postgres:15
     environment:
@@ -76,8 +89,8 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     volumes:
       - minio-data:/data
     ports:
@@ -90,7 +103,6 @@ services:
       retries: 3
     restart: always
 
-  # MinIO client for bucket initialization
   minio-init:
     image: minio/mc:latest
     depends_on:
@@ -98,9 +110,9 @@ services:
     entrypoint: >
       /bin/sh -c "
       sleep 10;
-      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
-      /usr/bin/mc mb myminio/rayes-youtube || true;
-      /usr/bin/mc anonymous set download myminio/rayes-youtube || true;
+      mc alias set myminio http://minio:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
+      mc mb myminio/rayes-youtube || true;
+      mc anonymous set download myminio/rayes-youtube || true;
       exit 0;
       "
 
@@ -111,7 +123,7 @@ services:
       - "8080:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-      interval: 30s
+      interval: 20s
       timeout: 10s
       retries: 5
     restart: always
@@ -125,7 +137,7 @@ services:
     command: scheduler
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
-      interval: 30s
+      interval: 20s
       timeout: 10s
       retries: 5
     restart: always
@@ -139,7 +151,7 @@ services:
     command: dag-processor
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8793/health"]
-      interval: 30s
+      interval: 20s
       timeout: 10s
       retries: 5
     restart: always
@@ -154,71 +166,16 @@ services:
     command:
       - -c
       - |
-        function ver() {
-          printf "%04d%04d%04d%04d" $${1//./ }
-        }
-        airflow_version=$$(AIRFLOW__LOGGING__LOGGING_LEVEL=INFO && airflow version)
-        airflow_version_comparable=$$(ver $${airflow_version})
-        min_airflow_version=2.2.0
-        min_airflow_version_comparable=$$(ver $${min_airflow_version})
-        if (( airflow_version_comparable < min_airflow_version_comparable )); then
-          echo
-          echo -e "\033[1;31mERROR!!!: Too old Airflow version $${airflow_version}!\e[0m"
-          echo "The minimum Airflow version supported: $${min_airflow_version}. Only use this or higher!"
-          echo
-          exit 1
-        fi
-        if [[ -z "$${AIRFLOW_UID}" ]]; then
-          echo
-          echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
-          echo "If you are on Linux, you SHOULD follow the instructions below to set "
-          echo "AIRFLOW_UID environment variable, otherwise files will be owned by root."
-          echo "For other operating systems you can get rid of the warning with manually created .env file:"
-          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#setting-the-right-airflow-user"
-          echo
-        fi
-        one_meg=1048576
-        mem_available=$$(($$(getconf _PHYS_PAGES) * $$(getconf PAGE_SIZE) / one_meg))
-        cpus_available=$$(grep -cE 'cpu[0-9]+' /proc/stat)
-        disk_available=$$(df / | tail -1 | awk '{print $$4}')
-        warning_resources="false"
-        if (( mem_available < 4000 )) ; then
-          echo
-          echo -e "\033[1;33mWARNING!!!: Not enough memory available for Docker.\e[0m"
-          echo "At least 4GB of memory required. You have $$(numfmt --to iec $$((mem_available * one_meg)))"
-          echo
-          warning_resources="true"
-        fi
-        if (( cpus_available < 2 )); then
-          echo
-          echo -e "\033[1;33mWARNING!!!: Not enough CPUS available for Docker.\e[0m"
-          echo "At least 2 CPUs recommended. You have $${cpus_available}"
-          echo
-          warning_resources="true"
-        fi
-        if (( disk_available < one_meg * 10 )); then
-          echo
-          echo -e "\033[1;33mWARNING!!!: Not enough Disk Space available for Docker.\e[0m"
-          echo "At least 10 GBs recommended. You have $$(numfmt --to iec $$((disk_available * 1024 )))"
-          echo
-          warning_resources="true"
-        fi
-        if [[ $${warning_resources} == "true" ]]; then
-          echo
-          echo -e "\033[1;33mWARNING!!!: You have not enough resources to run Airflow (see above)!\e[0m"
-          echo "Please follow the instructions to increase amount of resources available:"
-          echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
-          echo
-        fi
+        echo "Initializing Airflow..."
         mkdir -p /sources/logs /sources/dags /sources/plugins
-        chown -R "$${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
         exec /entrypoint airflow version
     environment:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _AIRFLOW_WWW_USER_USERNAME: airflow
+      _AIRFLOW_WWW_USER_PASSWORD: airflow
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     volumes:
@@ -227,9 +184,8 @@ services:
   grafana:
     image: grafana/grafana:latest
     environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
-      GF_INSTALL_PLUGINS: ""
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -249,4 +205,3 @@ volumes:
 networks:
   default:
     name: airflow-youtube-analytics
-
