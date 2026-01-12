@@ -151,8 +151,8 @@ services:
     <<: *airflow-common
     command: dag-processor
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8793/health"]
-      interval: 20s
+      test: ["CMD-SHELL", "airflow jobs check --job-type DagProcessorJob --hostname $(hostname) || exit 1"]
+      interval: 30s
       timeout: 10s
       retries: 5
     restart: always
@@ -160,6 +160,7 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
 
   airflow-init:
     <<: *airflow-common
