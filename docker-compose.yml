@@ -118,7 +118,7 @@ services:
 
   airflow-webserver:
     <<: *airflow-common
-    command: api-server
+    command: webserver
     ports:
       - "8080:8080"
     healthcheck:
@@ -131,6 +131,7 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
 
   airflow-scheduler:
     <<: *airflow-common
