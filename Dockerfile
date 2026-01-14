@@ -54,6 +54,9 @@ ENV PATH=$SPARK_HOME/bin:$PATH
 ENV PYSPARK_PYTHON=/usr/local/bin/python
 ENV PYSPARK_DRIVER_PYTHON=/usr/local/bin/python
 
+# Ensure Python can import pyspark
+ENV PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.9.7-src.zip:$PYTHONPATH
+
 # -----------------------------------------------------
 # Fix SQLAlchemy version for Airflow 3.x (optional)
 # -----------------------------------------------------
