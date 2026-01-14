@@ -30,7 +30,7 @@ x-airflow-common:
     COLLECTAPI_TOKEN: ${COLLECTAPI_TOKEN}
 
     # Correct Spark path
-    SPARK_HOME: /usr/local/lib/python3.12/site-packages/pyspark
+    SPARK_HOME: /opt/spark
     PYSPARK_PYTHON: /usr/local/bin/python
     PYSPARK_DRIVER_PYTHON: /usr/local/bin/python
 
