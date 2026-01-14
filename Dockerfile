@@ -26,15 +26,24 @@ RUN PIP_DEFAULT_TIMEOUT=120 PIP_RETRIES=15 pip install --no-cache-dir -r require
     PIP_DEFAULT_TIMEOUT=120 PIP_RETRIES=15 pip install --no-cache-dir -r pyspark-requirements.txt
 
 # Add Hadoop S3A connector jars for Spark (as airflow user, after pyspark is installed)
-# PySpark 3.5.0 uses Hadoop 3.3.4, so we need matching JARs
+# --- Install Apache Spark runtime binaries ---
 USER root
-RUN mkdir -p /home/airflow/.local/lib/python3.12/site-packages/pyspark/jars && \
-    # Hadoop AWS 3.3.4 to match PySpark's Hadoop version
-    wget -q https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar -P /home/airflow/.local/lib/python3.12/site-packages/pyspark/jars/ && \
-    # AWS Java SDK bundle (compatible version)
-    wget -q https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar -P /home/airflow/.local/lib/python3.12/site-packages/pyspark/jars/ && \
-    chown -R airflow: /home/airflow/.local/lib/python3.12/site-packages/pyspark/jars
+RUN mkdir -p /opt && \
+    echo "Downloading Apache Spark 3.5.0 (Hadoop 3)..." && \
+    (wget --progress=dot:giga -t 3 -O /opt/spark.tgz https://dlcdn.apache.org/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz \
+     || wget --progress=dot:giga -t 3 -O /opt/spark.tgz https://archive.apache.org/dist/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz) && \
+    tar -xzf /opt/spark.tgz -C /opt/ && \
+    mv /opt/spark-3.5.0-bin-hadoop3 /opt/spark && \
+    rm /opt/spark.tgz && \
+    ln -s /opt/spark/bin/spark-submit /usr/local/bin/spark-submit && \
+    ln -s /opt/spark/bin/pyspark /usr/local/bin/pyspark && \
+    ln -s /opt/spark/bin/spark-shell /usr/local/bin/spark-shell
+
+ENV SPARK_HOME=/opt/spark
+ENV PATH=$PATH:/opt/spark/bin
+
 USER airflow
+
 
 # Pin SQLAlchemy to version compatible with Airflow 3.0.6 (must be < 2.0)
 # Airflow 3.0.6 doesn't support SQLAlchemy 2.x - force downgrade after all installs
