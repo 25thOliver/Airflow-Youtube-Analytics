@@ -49,11 +49,21 @@ RUN mkdir -p /opt && \
     ln -s /opt/spark/bin/spark-shell /usr/local/bin/spark-shell && \
     \
 
-   # --- Add Hadoop AWS + AWS Java SDK for S3 (MinIO) ---
+# --- Add Hadoop AWS + AWS Java SDK for S3 (MinIO) ---
 RUN curl -L -o /opt/spark/jars/hadoop-aws-3.3.6.jar \
       https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.6/hadoop-aws-3.3.6.jar && \
     curl -L -o /opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar \
       https://repo1.maven.org/maven2/com/amazon/aws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar
+
+
+# Hadoop S3A configuration for Spark
+RUN mkdir -p /opt/spark/conf && \
+    echo "fs.s3a.endpoint=${MINIO_ENDPOINT}" >> /opt/spark/conf/core-site.xml && \
+    echo "fs.s3a.access.key=${MINIO_ACCESS_KEY}" >> /opt/spark/conf/core-site.xml && \
+    echo "fs.s3a.secret.key=${MINIO_SECRET_KEY}" >> /opt/spark/conf/core-site.xml && \
+    echo "fs.s3a.path.style.access=true" >> /opt/spark/conf/core-site.xml && \
+    echo "fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem" >> /opt/spark/conf/core-site.xml && \
+    echo "fs.s3a.connection.ssl.enabled=false" >> /opt/spark/conf/core-site.xml
 
 
 # Spark environment
