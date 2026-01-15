@@ -48,11 +48,17 @@ RUN mkdir -p /opt && \
     ln -s /opt/spark/bin/pyspark /usr/local/bin/pyspark && \
     ln -s /opt/spark/bin/spark-shell /usr/local/bin/spark-shell 
 
-# --- Add Hadoop AWS + AWS Java SDK for S3 (MinIO) ---
-RUN curl -L -o /opt/spark/jars/hadoop-aws-3.3.6.jar \
-      https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.6/hadoop-aws-3.3.6.jar && \
-    curl -L -o /opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar \
-      https://repo1.maven.org/maven2/com/amazon/aws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar
+# --- Add Hadoop AWS + AWS Java SDK (compatible with Spark 3.5.0 / Hadoop 3.3.4) ---
+RUN set -eux; \
+    mkdir -p /opt/spark/jars; \
+    echo "Downloading Hadoop AWS + AWS SDK jars..."; \
+    wget --timeout=60 --tries=5 -q \
+        https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar \
+        -P /opt/spark/jars/ && \
+    wget --timeout=60 --tries=5 -q \
+        https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.367/aws-java-sdk-bundle-1.12.367.jar \
+        -P /opt/spark/jars/
+
 
 
 # Hadoop S3A configuration for Spark
