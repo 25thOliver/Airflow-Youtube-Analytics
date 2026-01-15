@@ -46,7 +46,15 @@ RUN mkdir -p /opt && \
     rm /opt/spark.tgz && \
     ln -s /opt/spark/bin/spark-submit /usr/local/bin/spark-submit && \
     ln -s /opt/spark/bin/pyspark /usr/local/bin/pyspark && \
-    ln -s /opt/spark/bin/spark-shell /usr/local/bin/spark-shell
+    ln -s /opt/spark/bin/spark-shell /usr/local/bin/spark-shell && \
+    \
+
+   # --- Add Hadoop AWS + AWS Java SDK for S3 (MinIO) ---
+RUN curl -L -o /opt/spark/jars/hadoop-aws-3.3.6.jar \
+      https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.6/hadoop-aws-3.3.6.jar && \
+    curl -L -o /opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar \
+      https://repo1.maven.org/maven2/com/amazon/aws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar
+
 
 # Spark environment
 ENV SPARK_HOME=/opt/spark
