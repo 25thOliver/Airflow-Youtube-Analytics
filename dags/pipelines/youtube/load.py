@@ -43,7 +43,7 @@ def process_youtube_data():
 
         # Handle categorical country values safely
         if "country" in df.columns:
-            if pd.api.types.is_categorical_dtype(df["country"]):
+            if isinstance(df["country"].dtype, pd.CategoricalDtype):
                 df["country"] = df["country"].astype(str)
         processed_df["country"] = df.get("country", "Unknown").fillna("Unknown")
 
