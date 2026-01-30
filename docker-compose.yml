@@ -15,6 +15,11 @@ x-airflow-common:
     AIRFLOW__CORE__STORE_SERIALIZED_DAGS: 'true'
     AIRFLOW__CORE__STORE_DAG_CODE: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session'
+    
+    # Fix for login refresh loop on localhost
+    AIRFLOW__WEBSERVER__COOKIE_SECURE: 'False'
+    AIRFLOW__WEBSERVER__COOKIE_SAMESITE: 'Lax'
+    AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: 'true'
 
     AIRFLOW__WEBSERVER__BASE_URL: http://localhost:8080
     AIRFLOW__WEBSERVER__WEB_SERVER_URL: http://localhost:8080
