@@ -16,8 +16,8 @@ x-airflow-common:
     AIRFLOW__CORE__STORE_DAG_CODE: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session'
 
-    AIRFLOW__WEBSERVER__BASE_URL: http://airflow-webserver:8080
-    AIRFLOW__WEBSERVER__WEB_SERVER_URL: http://airflow-webserver:8080
+    AIRFLOW__WEBSERVER__BASE_URL: http://localhost:8080
+    AIRFLOW__WEBSERVER__WEB_SERVER_URL: http://localhost:8080
 
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
 
