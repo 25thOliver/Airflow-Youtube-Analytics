@@ -7,3 +7,5 @@ python-dotenv==1.0.0
 s3fs==2023.12.2
 pyarrow==14.0.2
 
+
+apache-airflow-providers-fab==1.0.1
