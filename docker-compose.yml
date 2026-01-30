@@ -16,9 +16,6 @@ x-airflow-common:
     AIRFLOW__CORE__STORE_DAG_CODE: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session'
     
-    # Enable FAB Auth Manager for fixed credentials
-    AIRFLOW__CORE__AUTH_MANAGER: 'airflow.providers.fab.auth_manager.FabAuthManager'
-    
     # Fix for login refresh loop on localhost
     AIRFLOW__WEBSERVER__COOKIE_SECURE: 'False'
     AIRFLOW__WEBSERVER__COOKIE_SAMESITE: 'Lax'
@@ -186,8 +183,8 @@ services:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: admin
-      _AIRFLOW_WWW_USER_PASSWORD: admin
+      _AIRFLOW_WWW_USER_USERNAME: airflow
+      _AIRFLOW_WWW_USER_PASSWORD: airflow
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     volumes:
