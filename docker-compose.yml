@@ -14,7 +14,8 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__STORE_SERIALIZED_DAGS: 'true'
     AIRFLOW__CORE__STORE_DAG_CODE: 'false'
-    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session'
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.FabAuthManager
+    # AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session'
     
     # Fix for login refresh loop on localhost
     AIRFLOW__WEBSERVER__COOKIE_SECURE: 'False'
