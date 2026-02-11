@@ -14,7 +14,7 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__STORE_SERIALIZED_DAGS: 'true'
     AIRFLOW__CORE__STORE_DAG_CODE: 'false'
-    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.FabAuthManager
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
     # AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session'
     
     # Fix for login refresh loop on localhost
@@ -124,7 +124,7 @@ services:
 
   airflow-webserver:
     <<: *airflow-common
-    command: api-server
+    command: webserver
     ports:
       - "8080:8080"
     healthcheck:
