@@ -16,6 +16,8 @@ The goal was to design a scalable data workflow capable of extracting, transform
 
 This project demonstrates how to design, containerize, and automate an **end-to-end data engineering pipeline** for YouTube analytics using **Apache Airflow**, **PySpark**, **MinIO**, **PostgreSQL**, and **Grafana**.
 
+It is a **fully independent, self-contained repository** – you only need this codebase plus Docker (and a YouTube API key) to run the complete stack locally.
+
 It automatically fetches YouTube channel data, performs transformations in Spark, loads the results into a PostgreSQL warehouse, and visualizes insights in Grafana — all orchestrated by Airflow.
 
 By the end, you’ll have a live dashboard showing:
@@ -128,7 +130,7 @@ transformed_df.write.mode("overwrite").parquet(
 
 ## Step 3: Load into PostgreSQL
 
-Airflow’s final task — `load_to_postgres` — transfers the transformed Parquet data into PostgreSQL using a JDBC connector or pandas-based loader.
+Airflow’s final task — `load_youtube_data` — transfers the transformed Parquet data into PostgreSQL using a pandas-based loader.
 
 ### Schema Alignment
 
@@ -159,7 +161,7 @@ Note: `channel_title` in Spark maps to `channel_name` in PostgreSQL — the only
 
 ## Step 4: Standalone Docker Setup
 
-This project is now **fully independent** and self-contained. All services (Airflow, MinIO, PostgreSQL, and Grafana) are orchestrated via Docker Compose.
+This project is **fully independent** and self-contained. All services (Airflow, MinIO, PostgreSQL, and Grafana) are orchestrated via Docker Compose.
 
 ### Prerequisites
 
@@ -260,7 +262,9 @@ Create a `.env` file in the project root with the following variables:
 | `GRAFANA_ADMIN_USER`  | Grafana admin username                             | No       | `admin`                    |
 | `GRAFANA_ADMIN_PASSWORD` | Grafana admin password                          | No       | `admin`                    |
 
-**Note:** The `.env` file is gitignored, so you'll need to create it manually. Only `YOUTUBE_API_KEY` is required; all other variables have sensible defaults.
+**Note:** The `.env` file is gitignored, so you'll need to create it manually. In most cases **only `YOUTUBE_API_KEY` is required**; all other variables already have sensible defaults that align with `docker-compose.yml`, and can be overridden if needed.
+
+Airflow 3 uses a JWT-based Execution API. This project pins a shared JWT secret via the `AIRFLOW__API_AUTH__JWT_SECRET` environment variable in `docker-compose.yml` so that the scheduler and webserver can authenticate task executions reliably. **Do not remove or override this setting** unless you know what you’re doing; changing it inconsistently across services can cause tasks to fail with `Invalid auth token: Signature verification failed`.
 
 ### Managing Services
 
