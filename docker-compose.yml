@@ -22,6 +22,9 @@ x-airflow-common:
     AIRFLOW__WEBSERVER__COOKIE_SAMESITE: 'Lax'
     AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: 'true'
 
+    # Scheduler communication with Execution API
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-webserver:8080/execution/
+
     AIRFLOW__WEBSERVER__BASE_URL: http://localhost:8080
     AIRFLOW__WEBSERVER__WEB_SERVER_URL: http://localhost:8080
 
