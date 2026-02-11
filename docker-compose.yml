@@ -16,6 +16,8 @@ x-airflow-common:
     AIRFLOW__CORE__STORE_SERIALIZED_DAGS: 'true'
     AIRFLOW__CORE__STORE_DAG_CODE: 'false'
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    # Execution API / JWT token configuration (must be consistent across all services)
+    AIRFLOW__API_AUTH__JWT_SECRET: 'xD3K2p9Qj7Lm4Zs8Fh2Vw6Nc0RyBt5Gh'
     # AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session'
     
     # Fix for login refresh loop on localhost
