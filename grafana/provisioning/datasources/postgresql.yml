@@ -2,6 +2,7 @@ apiVersion: 1
 
 datasources:
   - name: PostgreSQL
+    uid: grafana-postgresql-datasource
     type: postgres
     access: proxy
     url: postgres-analytics:5432
@@ -16,4 +17,9 @@ datasources:
       connMaxLifetime: 14400
     isDefault: true
     editable: true
+
+
+
+
+
 
