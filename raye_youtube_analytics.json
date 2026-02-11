@@ -1,0 +1,154 @@
+{
+  "id": null,
+  "uid": "raye-youtube-dashboard-fixed",
+  "title": "RAYE YouTube Analytics",
+  "tags": ["youtube", "analytics", "raye"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 2,
+  "refresh": "1h",
+  "style": "dark",
+  "panels": [
+    {
+      "type": "row",
+      "title": "Channel Overview",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "type": "stat",
+      "title": "Total Views",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT view_count AS value FROM raye_youtube_channel_stats ORDER BY published_at DESC LIMIT 1;",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" } } },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 }
+    },
+    {
+      "type": "stat",
+      "title": "Subscribers",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT subscriber_count AS value FROM raye_youtube_channel_stats ORDER BY published_at DESC LIMIT 1;",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" } } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 }
+    },
+    {
+      "type": "stat",
+      "title": "Total Videos",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT video_count AS value FROM raye_youtube_channel_stats ORDER BY published_at DESC LIMIT 1;",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 }
+    },
+    {
+      "type": "stat",
+      "title": "Engagement Rate (%)",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT ROUND((COALESCE(engagement_rate, 0) * 100)::numeric, 2) AS value FROM raye_youtube_channel_stats ORDER BY published_at DESC LIMIT 1;",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "orange", "value": 2 },
+                { "color": "green", "value": 5 }
+              ]
+            }
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 }
+    },
+    {
+      "type": "row",
+      "title": "Engagement Breakdown",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }
+    },
+    {
+      "type": "piechart",
+      "title": "Likes vs Comments",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT metric, value FROM ( SELECT COALESCE(like_count, 0) AS like_count, COALESCE(comment_count, 0) AS comment_count FROM raye_youtube_channel_stats ORDER BY published_at DESC LIMIT 1 ) src CROSS JOIN LATERAL ( VALUES ('Likes', like_count), ('Comments', comment_count) ) AS v(metric, value);",
+          "refId": "A"
+        }
+      ],
+      "options": { "legend": { "displayMode": "table" } },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 6 }
+    },
+    {
+      "type": "barchart",
+      "title": "Engagement Ratios (%)",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT metric, value FROM ( SELECT ROUND((COALESCE(like_ratio, 0) * 100)::numeric, 2) AS like_pct, ROUND((COALESCE(comment_ratio, 0) * 100)::numeric, 2) AS comment_pct, ROUND((COALESCE(engagement_rate, 0) * 100)::numeric, 2) AS engagement_pct FROM raye_youtube_channel_stats ORDER BY published_at DESC LIMIT 1 ) src CROSS JOIN LATERAL ( VALUES ('Likes / Views (%)', like_pct), ('Comments / Views (%)', comment_pct), ('Engagement (%)', engagement_pct) ) AS v(metric, value);",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 6 }
+    },
+    {
+      "type": "row",
+      "title": "Growth Metrics",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 12 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Daily Growth Trends",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT published_at::timestamp AS time, daily_view_growth AS \"Daily Views\", daily_sub_growth AS \"Daily Subs\" FROM raye_youtube_channel_stats ORDER BY published_at ASC;",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "options": { "legend": { "displayMode": "table" } }
+    },
+    {
+      "type": "row",
+      "title": "Channel Data Snapshot",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 }
+    },
+    {
+      "type": "table",
+      "title": "Full Channel Stats",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT * FROM raye_youtube_channel_stats ORDER BY published_at DESC LIMIT 10;",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 22 },
+      "options": { "showHeader": true }
+    }
+  ],
+  "templating": { "list": [] },
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {}
+}
