@@ -12,6 +12,7 @@ x-airflow-common:
 
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__INTERNAL_API_SECRET_KEY: 'aP3agq05l7Q3cPV+LSnnqYoW8bDJvvM0ptA4MY1hEgk='
     AIRFLOW__CORE__STORE_SERIALIZED_DAGS: 'true'
     AIRFLOW__CORE__STORE_DAG_CODE: 'false'
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
